@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOC Web App Generator — WordPress.com</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="index.html">
+        <span>WP TOC Generator</span>
+      </a>
+      <nav class="main-nav">
+        <a href="index.html">← Back to Overview</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 40px; padding-bottom: 60px;">
+    <div class="card-grid" style="grid-template-columns: 1fr;">
+      <article class="feature-card">
+        <h2>Run TOC Generator Utility</h2>
+        <p>Enter any public WordPress.com blog domain or custom domain below:</p>
+        
+        <div style="display: flex; gap: 10px; margin: 20px 0;">
+          <input type="text" id="siteUrl" placeholder="e.g. aatayyab.wordpress.com" value="aatayyab.wordpress.com" style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem;">
+          <button onclick="generateTOC()" class="btn btn-primary">Build TOC</button>
+        </div>
+
+        <div id="status" style="margin-bottom: 15px; font-weight: bold;"></div>
+        <textarea id="output" readonly style="width: 100%; height: 350px; font-family: monospace; font-size: 13px; padding: 12px; border: 1px solid #ced4da; border-radius: 4px; background: #f8f9fa; display: none; box-sizing: border-box;"></textarea>
+        <button id="copyBtn" onclick="copyResult()" class="btn btn-primary" style="display: none; margin-top: 15px; background: #198754; border-color: #198754;">Copy HTML to Clipboard</button>
+      </article>
+    </div>
+  </main>
+
+  <script>
+  async function generateTOC() {
+      let rawInput = document.getElementById('siteUrl').value.trim();
+      if (!rawInput) return;
+
+      let site = rawInput.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      let statusDiv = document.getElementById('status');
+      let outputText = document.getElementById('output');
+      let copyBtn = document.getElementById('copyBtn');
+
+      statusDiv.style.color = '#0d6efd';
+      statusDiv.innerText = `Fetching posts for ${site}...`;
+      outputText.style.display = 'none';
+      copyBtn.style.display = 'none';
+
+      let allPosts = [];
+      let page = 1;
+      let perPage = 100;
+      let keepGoing = true;
+
+      try {
+          while (keepGoing) {
+              let apiUrl = `https://public-api.wordpress.com/rest/v1.1/sites/${encodeURIComponent(site)}/posts/?number=${perPage}&page=${page}&fields=ID,title,URL,date`;
+              let res = await fetch(apiUrl);
+              
+              if (!res.ok) {
+                  throw new Error(`Failed to fetch (HTTP ${res.status}). Verify domain name.`);
+              }
+
+              let data = await res.json();
+              if (!data.posts || data.posts.length === 0) {
+                  keepGoing = false;
+                  break;
+              }
+
+              allPosts = allPosts.concat(data.posts);
+              statusDiv.innerText = `Fetched ${allPosts.length} posts...`;
+
+              if (data.posts.length < perPage) {
+                  keepGoing = false;
+              } else {
+                  page++;
+                  await new Promise(r => setTimeout(r, 100));
+              }
+          }
+
+          if (allPosts.length === 0) {
+              statusDiv.style.color = '#dc3545';
+              statusDiv.innerText = 'No published posts found on this blog.';
+              return;
+          }
+
+          let byYear = {};
+          allPosts.forEach(post => {
+              let year = new Date(post.date).getFullYear();
+              if (!byYear[year]) byYear[year] = [];
+              byYear[year].push(post);
+          });
+
+          let years = Object.keys(byYear).sort((a, b) => b - a);
+
+          let html = "<!-- wp:html -->\n<h1>Blog Archives</h1>\n";
+          years.forEach(year => {
+              html += `\n<h2>${year}</h2>\n<ul>\n`;
+              byYear[year].sort((a, b) => new Date(b.date) - new Date(a.date));
+              byYear[year].forEach(post => {
+                  let safeTitle = post.title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                  html += `  <li><a href="${post.URL}">${safeTitle}</a></li>\n`;
+              });
+              html += "</ul>\n";
+          });
+          html += "<!-- /wp:html -->";
+
+          outputText.value = html;
+          outputText.style.display = 'block';
+          copyBtn.style.display = 'inline-block';
+          statusDiv.style.color = '#198754';
+          statusDiv.innerText = `Done! Successfully compiled ${allPosts.length} posts into TOC HTML.`;
+
+      } catch (err) {
+          statusDiv.style.color = '#dc3545';
+          statusDiv.innerText = err.message;
+      }
+  }
+
+  function copyResult() {
+      let outputText = document.getElementById('output');
+      outputText.select();
+      document.execCommand('copy');
+      alert('TOC HTML copied to clipboard!');
+  }
+  </script>
+</body>
+</html>
