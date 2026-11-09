@@ -6,7 +6,6 @@
     <title>Instant Web WordPress TOC Generator</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Specific overrides for app UI element polish */
         .app-card {
             background: #ffffff;
             border: 1px solid var(--border, #e9ecef);
@@ -93,11 +92,16 @@
   </main>
 
 <script>
+// Helper function to decode HTML entities cleanly so codes like &#8217; convert back to actual characters
+function decodeHtmlEntities(text) {
+    let doc = new DOMParser().parseFromString(text, 'text/html');
+    return doc.documentElement.textContent;
+}
+
 async function generateTOC() {
     let rawInput = document.getElementById('siteUrl').value.trim();
     if (!rawInput) return;
 
-    // Clean site input URL
     let site = rawInput.replace(/^https?:\/\//, '').replace(/\/$/, '');
     let statusDiv = document.getElementById('status');
     let outputText = document.getElementById('output');
@@ -135,7 +139,7 @@ async function generateTOC() {
                 keepGoing = false;
             } else {
                 page++;
-                await new Promise(r => setTimeout(r, 100)); // 100ms pause
+                await new Promise(r => setTimeout(r, 100));
             }
         }
 
@@ -145,7 +149,6 @@ async function generateTOC() {
             return;
         }
 
-        // Group by year
         let byYear = {};
         allPosts.forEach(post => {
             let year = new Date(post.date).getFullYear();
@@ -153,16 +156,16 @@ async function generateTOC() {
             byYear[year].push(post);
         });
 
-        // Sort years descending
         let years = Object.keys(byYear).sort((a, b) => b - a);
 
         let html = "<!-- wp:html -->\n<h1>Blog Archives</h1>\n";
         years.forEach(year => {
             html += `\n<h2>${year}</h2>\n<ul>\n`;
-            // Sort posts inside year descending
             byYear[year].sort((a, b) => new Date(b.date) - new Date(a.date));
             byYear[year].forEach(post => {
-                let safeTitle = post.title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                // Decode entities first, then escape unsafe HTML characters safely
+                let cleanTitle = decodeHtmlEntities(post.title);
+                let safeTitle = cleanTitle.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                 html += `  <li><a href="${post.URL}">${safeTitle}</a></li>\n`;
             });
             html += "</ul>\n";
