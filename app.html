@@ -5,6 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Instant Web WordPress TOC Generator</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Specific overrides for app UI element polish */
+        .app-card {
+            background: #ffffff;
+            border: 1px solid var(--border, #e9ecef);
+            border-radius: var(--radius, 8px);
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-group {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .input-control {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-control:focus {
+            border-color: var(--primary, #0d6efd);
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+        }
+        #status {
+            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        textarea.output-box {
+            width: 100%;
+            height: 350px;
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 13px;
+            padding: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background: #f8f9fa;
+            display: none;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        .btn-success {
+            background-color: #198754;
+            border-color: #198754;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background-color: #157347;
+            border-color: #146c43;
+        }
+    </style>
 </head>
 <body>
 
@@ -19,19 +76,19 @@
     </div>
   </header>
 
-  <main class="container" style="padding-top: 40px; padding-bottom: 60px;">
-    <div class="card">
+  <main class="container" style="padding-top: 50px; padding-bottom: 60px;">
+    <div class="app-card">
         <h2>Public WordPress.com TOC Generator</h2>
-        <p>Enter any blog subdomain or custom domain hosted on WordPress.com:</p>
+        <p style="color: var(--text-muted, #6c757d); margin-top: 5px;">Enter any blog subdomain or custom domain hosted on WordPress.com:</p>
         
-        <div class="form-group" style="display: flex; gap: 10px; margin: 20px 0;">
-            <input type="text" id="siteUrl" placeholder="e.g. aatayyab.wordpress.com" value="aatayyab.wordpress.com">
-            <button onclick="generateTOC()">Build TOC</button>
+        <div class="form-group">
+            <input type="text" id="siteUrl" class="input-control" placeholder="e.g. aatayyab.wordpress.com" value="aatayyab.wordpress.com">
+            <button onclick="generateTOC()" class="btn btn-primary">Build TOC</button>
         </div>
 
         <div id="status"></div>
-        <textarea id="output" readonly></textarea>
-        <button id="copyBtn" onclick="copyResult()">Copy HTML to Clipboard</button>
+        <textarea id="output" class="output-box" readonly></textarea>
+        <button id="copyBtn" onclick="copyResult()" class="btn btn-success" style="display: none; margin-top: 15px;">Copy HTML to Clipboard</button>
     </div>
   </main>
 
